@@ -49,11 +49,11 @@ async function processFeed(feed: Feed) {
 
   for (const image of images) {
     const filePath = await downloadAsset(getImageOriginUrl(image), feedPath)
-    await doExif(filePath, image.photoTime)
+    await doExif(filePath, image.photoTime || feedContent.publishTime || feed.createTime)
   }
   for (const video of videos) {
     const filePath = await downloadAsset(video.videoUrl, feedPath)
-    await doExif(filePath, video.photoTime)
+    await doExif(filePath, video.photoTime || feedContent.publishTime || feed.createTime)
   }
   fse.outputFileSync(
     path.join(feedPath, 'readme.md'),
