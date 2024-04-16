@@ -3,47 +3,11 @@ import stream from 'node:stream'
 import got from 'got'
 import fse from 'fs-extra'
 import path from 'path'
+import { exiftool } from 'exiftool-vendored'
+import dayjs from 'dayjs'
+import { FeedImage } from 'types'
 
 const pipeline = promisify(stream.pipeline)
-
-export enum ILessonDataType {
-  Image = '1',
-  Video = '2',
-  Text = '3'
-}
-
-export interface ILessonData {
-  url: string
-  type: ILessonDataType
-}
-
-export interface ILesson {
-  lesson_id: string
-  dated: string
-  comment_info: {
-    content: string
-    data: ILessonData[]
-    created: string
-  }
-}
-
-export async function getLessonData(form: any, cookie: string): Promise<ILesson[]> {
-  try {
-    // @ts-ignore
-    const { data } = await got
-      .post('https://jwb.sc-edu.com/api/wx/lesson_comment_list/', {
-        form,
-        headers: {
-          cookie
-        }
-      })
-      .json()
-    return data.lists
-  } catch (error) {
-    console.error(error)
-    return []
-  }
-}
 
 export async function downloadAsset(url: string, dest: string) {
   if (!fse.pathExistsSync(dest)) {
@@ -101,4 +65,26 @@ export function outputMd({
   }
 
   return mdContent
+}
+
+export async function doExif(filePath: string, time: number) {
+  try {
+    const tags = await exiftool.read(filePath)
+
+    // console.log(tags)
+    if (!tags.CreateDate || typeof tags.CreateDate === 'string') {
+      console.log(`write exif to ${filePath}`)
+      await exiftool.write(filePath, {
+        AllDates: dayjs(time).format('YYYY-MM-DDTHH:mm:ss'),
+        TimeZoneOffset: 8
+      })
+      fse.removeSync(filePath + '_original')
+    }
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export function getImageOriginUrl(image: FeedImage) {
+  return image.imageUrl.split('?')[0]
 }
