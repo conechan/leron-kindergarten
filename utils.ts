@@ -20,10 +20,22 @@ export async function downloadAsset(url: string, dest: string) {
       got.stream(url),
       fse.createWriteStream(destFile)
     )
+
+    const tags = await exiftool.read(destFile)
+    // 如果是 png，重新下载
+    if (tags.FileType?.includes('PNG')) {
+      console.log(`${url} is PNG. try to use imageMogr2 download it.`)
+      await pipeline(
+        //
+        got.stream(url + '?imageMogr2/format/jpg'),
+        fse.createWriteStream(destFile)
+      )
+    }
     console.log(`${url} downloaded!`)
-  } else {
-    // console.log(`${url} skipped!`)
   }
+  // else {
+  //   // console.log(`${url} skipped!`)
+  // }
   return destFile
 }
 
@@ -69,15 +81,16 @@ export function outputMd({
 
 export async function doExif(filePath: string, time: number) {
   try {
-    const tags = await exiftool.read(filePath)
+    // const tags = await exiftool.read(filePath)
 
+    // console.log(tags.FileType?.includes('PNG'))
     console.log(`write exif to ${filePath}`)
     await exiftool.write(filePath, {
       AllDates: dayjs(time).format('YYYY-MM-DDTHH:mm:ss'),
       TimeZoneOffset: 8
     })
     fse.removeSync(filePath + '_original')
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
   }
 }
