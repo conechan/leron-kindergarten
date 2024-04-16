@@ -71,15 +71,12 @@ export async function doExif(filePath: string, time: number) {
   try {
     const tags = await exiftool.read(filePath)
 
-    // console.log(tags)
-    if (!tags.CreateDate || typeof tags.CreateDate === 'string') {
-      console.log(`write exif to ${filePath}`)
-      await exiftool.write(filePath, {
-        AllDates: dayjs(time).format('YYYY-MM-DDTHH:mm:ss'),
-        TimeZoneOffset: 8
-      })
-      fse.removeSync(filePath + '_original')
-    }
+    console.log(`write exif to ${filePath}`)
+    await exiftool.write(filePath, {
+      AllDates: dayjs(time).format('YYYY-MM-DDTHH:mm:ss'),
+      TimeZoneOffset: 8
+    })
+    fse.removeSync(filePath + '_original')
   } catch (error) {
     console.error(error)
   }
